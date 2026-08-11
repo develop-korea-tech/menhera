@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>가족 같은 회사 v3 — 채용 기록</title>
+<link rel="icon" href="data:,">
 <style>
 :root{--bg:#07090f;--panel:#10141d;--panel2:#171d2a;--line:#273043;--txt:#eef2f8;--muted:#7f899e;--pink:#ff79b0;--red:#e73657;--blue:#5ca7ff;--yellow:#ffd85f;--green:#61d17d;--shadow:0 18px 60px rgba(0,0,0,.45);--vh:100dvh}
 @supports not (height:100dvh){:root{--vh:100vh}}
@@ -122,11 +123,19 @@ const members={다람이:['첫 취준 · 온라인','on'],너구리:['프론트�
 function renderMembers(){const box=$('#memberList');box.innerHTML='';Object.entries(members).forEach(([n,v])=>{box.insertAdjacentHTML('beforeend',`<div class="member"><div class="avatar">${avatarHTML(n)}</div><div><b>${n}</b><small>${v[0]}</small></div><span class="statusDot ${v[1]==='off'?'off':''}"></span></div>`)});box.insertAdjacentHTML('beforeend',`<div class="member"><div class="avatar">🙂</div><div><b>${nickname}</b><small>열람자 · 온라인</small></div><span class="statusDot"></span></div>`)}
 function sys(t,alert=false){chat.insertAdjacentHTML('beforeend',`<div class="sys ${alert?'alert':''}"><span>${t}</span></div>`);down()}
 function message(who,text,opt={}){const mine=who==='나';const av=mine?'':`<div class="avatar">${avatarHTML(who,opt.infected)}</div>`;const whohtml=mine?'':`<div class="who">${who}</div>`;const corrupt=opt.corrupt?' corrupt':'';const read=mine?`<span class="read">${opt.read??'4'}</span>`:'';chat.insertAdjacentHTML('beforeend',`<div class="msgRow ${mine?'me':''}">${av}<div class="msgWrap">${whohtml}<div class="bubble${corrupt}">${text}</div><div class="meta"><span>${opt.time||now()}</span>${read}</div></div></div>`);down(!userScrolling);if(document.hidden){unread++;document.title=`(${unread}) 이번에는 진짜 취업한다`}}
-function deleted(who,hiddenText){chat.insertAdjacentHTML('beforeend',`<div class="msgRow"><div class="avatar">${avatarHTML(who)}</div><div class="msgWrap"><div class="who">${who}</div><div class="bubble deleted" data-secret="${hiddenText.replace(/"/g,'&quot;')}">메시지가 삭제되었습니다. · 눌러서 복원</div><div class="meta"><span>${now()}</span></div></div></div>`);down(!userScrolling);const e=chat.querySelector('.deleted:last-of-type');e.onclick=()=>{e.textContent='복원됨: '+e.dataset.secret;e.style.color='#ff9fbd';e.onclick=null}}
+function deleted(who,hiddenText){
+  const id='del_'+Date.now()+'_'+Math.random().toString(36).slice(2);
+  const safeSecret=String(hiddenText).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  chat.insertAdjacentHTML('beforeend',`<div class="msgRow"><div class="avatar">${avatarHTML(who)}</div><div class="msgWrap"><div class="who">${who}</div><div id="${id}" class="bubble deleted" data-secret="${safeSecret}">메시지가 삭제되었습니다. · 눌러서 복원</div><div class="meta"><span>${now()}</span></div></div></div>`);
+  down(!userScrolling);
+  const e=document.getElementById(id);
+  if(!e) return;
+  e.onclick=()=>{e.textContent='복원됨: '+e.dataset.secret;e.style.color='#ff9fbd';e.style.borderColor='#ff5d90';};
+}
 function typing(who,ms=320){return new Promise(async r=>{const id='t'+Date.now()+'_'+Math.random().toString(36).slice(2);chat.insertAdjacentHTML('beforeend',`<div id="${id}" class="msgRow"><div class="avatar">${avatarHTML(who)}</div><div class="msgWrap"><div class="who">${who} 입력 중...</div><div class="bubble typing"><i class="dot"></i><i class="dot"></i><i class="dot"></i></div></div></div>`);down(!userScrolling);await sleep(ms);document.getElementById(id)?.remove();r()})}
 function down(force=true){if(force||chat.scrollHeight-chat.scrollTop-chat.clientHeight<140){requestAnimationFrame(()=>{chat.scrollTop=chat.scrollHeight})}}
 let userScrolling=false,scrollResumeTimer=null;chat.addEventListener('scroll',()=>{const gap=chat.scrollHeight-chat.scrollTop-chat.clientHeight;userScrolling=gap>160;clearTimeout(scrollResumeTimer);if(userScrolling)scrollResumeTimer=setTimeout(()=>{userScrolling=false},12000)},{passive:true});
-async function say(who,text,ms=280,opt={}){const typingMs=1800;await typing(who,typingMs);message(who,text,opt);await sleep(4200)}
+async function say(who,text,ms=280,opt={}){const typingMs=1500;await typing(who,typingMs);message(who,text,opt);await sleep(3500)}
 function choices(opts,label='답장을 선택하세요'){quick.innerHTML='';opts.forEach(o=>{const b=document.createElement('button');b.textContent=o.label;b.onclick=()=>{quick.innerHTML='';message('나',o.send||o.label);input.disabled=true;send.disabled=true;o.go?.();};quick.appendChild(b)});input.disabled=false;send.disabled=false;input.placeholder=label}
 function waitText(){return new Promise(resolve=>{input.disabled=false;send.disabled=false;input.placeholder='직접 입력해도 됩니다';const done=()=>{const v=input.value.trim();if(!v)return;input.value='';input.disabled=true;send.disabled=true;message('나',v);send.onclick=null;input.onkeydown=null;resolve(v)};send.onclick=done;input.onkeydown=e=>{if(e.key==='Enter')done()}})}
 document.addEventListener('visibilitychange',()=>{if(!document.hidden&&unread){toast(`새 메시지 ${unread}개`);unread=0;document.title='가족 같은 회사 — 채용 기록'}})
